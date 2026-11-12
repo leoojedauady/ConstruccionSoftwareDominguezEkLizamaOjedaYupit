@@ -167,23 +167,38 @@ public final class GestorPrestamos {
      * Registra la devolución de un préstamo activo. El préstamo calcula por sí mismo
      * su retraso y su penalización.
      *
+     * <p><b>Técnica 5 - Separate Query from Modifier.</b> El método original modificaba
+     * el préstamo y, además, lo devolvía como resultado. Ahora este método solo modifica
+     * (devuelve {@code void}); quien necesite consultar el resultado usa
+     * {@link #buscarPrestamo(int)}.</p>
+     *
      * <p><b>Técnica 4 - Move Method.</b> El cálculo del retraso y la penalización que
      * estaba aquí se movió a {@link Prestamo#registrarDevolucion(LocalDate)}, porque solo
      * usa datos del préstamo.</p>
      *
      * @param prestamoId identificador del préstamo
      * @param fecha fecha real de devolución
-     * @return el préstamo actualizado
      * @throws IllegalArgumentException si el préstamo no existe o la fecha no es válida
      * @throws IllegalStateException si el préstamo ya estaba devuelto
      */
-    public Prestamo devolver(int prestamoId, LocalDate fecha) {
-        Prestamo prestamo = prestamos.stream()
+    public void devolver(int prestamoId, LocalDate fecha) {
+        buscarPrestamo(prestamoId).registrarDevolucion(fecha);
+    }
+
+    /**
+     * Técnica 5 - Separate Query from Modifier: consulta separada del modificador
+     * {@link #devolver(int, LocalDate)}. Busca un préstamo por su identificador sin
+     * modificar nada.
+     *
+     * @param prestamoId identificador del préstamo
+     * @return el préstamo con ese identificador
+     * @throws IllegalArgumentException si el préstamo no existe
+     */
+    public Prestamo buscarPrestamo(int prestamoId) {
+        return prestamos.stream()
                 .filter(p -> p.getId() == prestamoId)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No existe el préstamo con ID " + prestamoId));
-        prestamo.registrarDevolucion(fecha);
-        return prestamo;
     }
 
     /**
