@@ -9,7 +9,10 @@ import gestor.prestamos.servicio.GestorPrestamos;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -33,11 +36,17 @@ public final class MenuConsola {
             =========================================
             """;
 
-    private static final List<Integer> OPCIONES = List.of(0, 1, 2, 3, 4, 5, 6, 7, 8);
-
     private final GestorPrestamos gestor;
     private final RepositorioCsv repositorio;
     private final Entrada entrada;
+
+    /**
+     * Técnica 10 - Replace Conditional with Polymorphism: cada número del menú se asocia
+     * a un objeto {@link OpcionMenu}. Sustituye al switch de ejecutarOpcion(). Las claves
+     * del mapa son además las opciones válidas que acepta el menú (antes, la constante
+     * OPCIONES repetía esa misma lista por separado).
+     */
+    private final Map<Integer, OpcionMenu> opciones;
 
     /**
      * Crea el menú con sus dependencias.
@@ -50,6 +59,30 @@ public final class MenuConsola {
         this.gestor = gestor;
         this.repositorio = repositorio;
         this.entrada = entrada;
+        this.opciones = crearOpciones();
+    }
+
+    /**
+     * Técnica 10 - Replace Conditional with Polymorphism: construye la tabla de opciones.
+     * Cada opción es una implementación distinta de {@link OpcionMenu}: las opciones 1 a 8
+     * se implementan con referencias a los métodos de este menú y la opción 0 con
+     * {@link OpcionSalir}, que redefine {@link OpcionMenu#terminaElPrograma()}.
+     * Para añadir una opción nueva basta con registrarla aquí, sin tocar ningún switch.
+     *
+     * @return opciones del menú indexadas por su número
+     */
+    private Map<Integer, OpcionMenu> crearOpciones() {
+        Map<Integer, OpcionMenu> mapa = new LinkedHashMap<>();
+        mapa.put(1, this::listarHerramientas);
+        mapa.put(2, this::anadirHerramienta);
+        mapa.put(3, this::prestar);
+        mapa.put(4, this::devolver);
+        mapa.put(5, this::verPrestamosActivos);
+        mapa.put(6, this::verHistorial);
+        mapa.put(7, this::darDeBaja);
+        mapa.put(8, this::reactivar);
+        mapa.put(0, new OpcionSalir());
+        return Collections.unmodifiableMap(mapa);
     }
 
     /**
@@ -60,7 +93,7 @@ public final class MenuConsola {
         boolean salir = false;
         while (!salir) {
             System.out.println(MENU);
-            int opcion = entrada.pedirOpcion("Elige una opción: ", OPCIONES);
+            int opcion = entrada.pedirOpcion("Elige una opción: ", opciones.keySet());
             try {
                 salir = ejecutarOpcion(opcion);
             } catch (IllegalArgumentException | IllegalStateException e) {
@@ -73,24 +106,18 @@ public final class MenuConsola {
     /**
      * Ejecuta la opción elegida.
      *
+     * <p><b>Técnica 10 - Replace Conditional with Polymorphism.</b> Antes este método
+     * tenía un switch que decidía qué hacer según el número de opción. Ahora se busca el
+     * objeto {@link OpcionMenu} correspondiente y se le pide que se ejecute; cada opción
+     * decide su comportamiento (y si termina el programa) por polimorfismo.</p>
+     *
      * @param opcion número de opción del menú
      * @return {@code true} si el usuario quiere salir de la aplicación
      */
     private boolean ejecutarOpcion(int opcion) {
-        switch (opcion) {
-            case 1 -> listarHerramientas();
-            case 2 -> anadirHerramienta();
-            case 3 -> prestar();
-            case 4 -> devolver();
-            case 5 -> verPrestamosActivos();
-            case 6 -> verHistorial();
-            case 7 -> darDeBaja();
-            case 8 -> reactivar();
-            default -> {
-                return true;
-            }
-        }
-        return false;
+        OpcionMenu elegida = opciones.get(opcion);
+        elegida.ejecutar();
+        return elegida.terminaElPrograma();
     }
 
     private void listarHerramientas() {
