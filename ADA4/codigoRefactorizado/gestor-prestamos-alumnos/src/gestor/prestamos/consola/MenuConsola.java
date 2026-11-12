@@ -208,7 +208,7 @@ public final class MenuConsola {
      * @return periodo con las fechas introducidas
      */
     private PeriodoPrestamo pedirPeriodoPrestamo() {
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = fechaActual();
         LocalDate inicio = entrada.pedirFecha("Fecha de préstamo (AAAA-MM-DD, Enter = " + hoy + "): ", hoy);
         LocalDate limitePorDefecto = inicio.plusDays(GestorPrestamos.DIAS_PRESTAMO_DEFECTO);
         LocalDate limite = entrada.pedirFecha(
@@ -245,7 +245,7 @@ public final class MenuConsola {
         List<Integer> ids = activos.stream().map(Prestamo::getId).toList();
         int id = entrada.pedirOpcion("ID del préstamo a devolver: ", ids);
 
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = fechaActual();
         LocalDate fecha = entrada.pedirFecha("Fecha de devolución (AAAA-MM-DD, Enter = " + hoy + "): ", hoy);
 
         // Técnica 5 - Separate Query from Modifier: primero se modifica (devolver) y
@@ -262,19 +262,25 @@ public final class MenuConsola {
         }
     }
 
+    /**
+     * Muestra los préstamos activos y su situación respecto a la fecha actual.
+     *
+     * <p><b>Técnica 2 - Replace Temp with Query.</b> La variable temporal {@code hoy}
+     * ({@code LocalDate hoy = LocalDate.now()}) se sustituye por el método de consulta
+     * {@link #fechaActual()}, que pueden usar también los métodos extraídos.</p>
+     */
     private void verPrestamosActivos() {
         List<Prestamo> activos = gestor.prestamosActivos();
         if (activos.isEmpty()) {
             System.out.println("\n  No hay préstamos activos.");
             return;
         }
-        LocalDate hoy = LocalDate.now();
         System.out.println("\n  Préstamos activos:");
         for (Prestamo p : activos) {
             String situacion;
-            if (p.estado(hoy) == EstadoPrestamo.ATRASADO) {
-                long dias = p.getDiasRetrasoA(hoy);
-                double estimada = p.calcularPenalizacion(hoy, Prestamo.PENALIZACION_POR_DIA);
+            if (p.estado(fechaActual()) == EstadoPrestamo.ATRASADO) {
+                long dias = p.getDiasRetrasoA(fechaActual());
+                double estimada = p.calcularPenalizacion(fechaActual(), Prestamo.PENALIZACION_POR_DIA);
                 situacion = String.format("ATRASADO %d día(s), penalización estimada %.2f €", dias, estimada);
             } else {
                 situacion = "Al día, vence " + p.getFechaLimite();
@@ -282,6 +288,16 @@ public final class MenuConsola {
             System.out.printf("    %s - %s | desde %s | %s%n",
                     p.getHerramienta().getNombre(), p.getPrestatario(), p.getFechaPrestamo(), situacion);
         }
+    }
+
+    /**
+     * Técnica 2 - Replace Temp with Query: consulta que sustituye a la variable
+     * temporal {@code hoy}. Devuelve la fecha del sistema.
+     *
+     * @return la fecha de hoy
+     */
+    private LocalDate fechaActual() {
+        return LocalDate.now();
     }
 
     private void verHistorial() {
