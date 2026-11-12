@@ -268,6 +268,11 @@ public final class MenuConsola {
      * <p><b>Técnica 2 - Replace Temp with Query.</b> La variable temporal {@code hoy}
      * ({@code LocalDate hoy = LocalDate.now()}) se sustituye por el método de consulta
      * {@link #fechaActual()}, que pueden usar también los métodos extraídos.</p>
+     *
+     * <p><b>Técnica 9 - Decompose Conditional.</b> El if/else que estaba dentro del bucle
+     * mezclaba el cálculo del retraso con el texto que se muestra. Se descompone en
+     * {@link #describirSituacion}, {@link #estaAtrasado}, {@link #describirAtraso} y
+     * {@link #describirAlDia}.</p>
      */
     private void verPrestamosActivos() {
         List<Prestamo> activos = gestor.prestamosActivos();
@@ -277,16 +282,9 @@ public final class MenuConsola {
         }
         System.out.println("\n  Préstamos activos:");
         for (Prestamo p : activos) {
-            String situacion;
-            if (p.estado(fechaActual()) == EstadoPrestamo.ATRASADO) {
-                long dias = p.getDiasRetrasoA(fechaActual());
-                double estimada = p.calcularPenalizacion(fechaActual(), Prestamo.PENALIZACION_POR_DIA);
-                situacion = String.format("ATRASADO %d día(s), penalización estimada %.2f €", dias, estimada);
-            } else {
-                situacion = "Al día, vence " + p.getFechaLimite();
-            }
             System.out.printf("    %s - %s | desde %s | %s%n",
-                    p.getHerramienta().getNombre(), p.getPrestatario(), p.getFechaPrestamo(), situacion);
+                    p.getHerramienta().getNombre(), p.getPrestatario(), p.getFechaPrestamo(),
+                    describirSituacion(p));
         }
     }
 
@@ -298,6 +296,53 @@ public final class MenuConsola {
      */
     private LocalDate fechaActual() {
         return LocalDate.now();
+    }
+
+    /**
+     * Técnica 9 - Decompose Conditional: el condicional original queda reducido a
+     * «si está atrasado, describe el atraso; si no, describe que está al día».
+     *
+     * @param prestamo préstamo activo
+     * @return texto con la situación del préstamo
+     */
+    private String describirSituacion(Prestamo prestamo) {
+        if (estaAtrasado(prestamo)) {
+            return describirAtraso(prestamo);
+        }
+        return describirAlDia(prestamo);
+    }
+
+    /**
+     * Técnica 9 - Decompose Conditional: la condición, extraída con un nombre propio.
+     *
+     * @param prestamo préstamo activo
+     * @return {@code true} si la fecha límite ya pasó
+     */
+    private boolean estaAtrasado(Prestamo prestamo) {
+        return prestamo.estado(fechaActual()) == EstadoPrestamo.ATRASADO;
+    }
+
+    /**
+     * Técnica 9 - Decompose Conditional: rama «atrasado». Calcula los días de retraso
+     * y la penalización estimada a fecha de hoy y los presenta como texto.
+     *
+     * @param prestamo préstamo activo y atrasado
+     * @return texto con los días de retraso y la penalización estimada
+     */
+    private String describirAtraso(Prestamo prestamo) {
+        long dias = prestamo.getDiasRetrasoA(fechaActual());
+        double estimada = prestamo.calcularPenalizacion(fechaActual(), Prestamo.PENALIZACION_POR_DIA);
+        return String.format("ATRASADO %d día(s), penalización estimada %.2f €", dias, estimada);
+    }
+
+    /**
+     * Técnica 9 - Decompose Conditional: rama «al día».
+     *
+     * @param prestamo préstamo activo dentro de plazo
+     * @return texto con la fecha de vencimiento
+     */
+    private String describirAlDia(Prestamo prestamo) {
+        return "Al día, vence " + prestamo.getFechaLimite();
     }
 
     private void verHistorial() {
