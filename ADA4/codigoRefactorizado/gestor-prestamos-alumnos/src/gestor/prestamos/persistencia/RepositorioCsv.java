@@ -1,6 +1,7 @@
 package gestor.prestamos.persistencia;
 
 import gestor.prestamos.modelo.Herramienta;
+import gestor.prestamos.modelo.PeriodoPrestamo;
 import gestor.prestamos.modelo.Prestamo;
 
 import java.io.IOException;
@@ -163,7 +164,9 @@ public final class RepositorioCsv {
             LocalDate devolucion = textoDevolucion.isEmpty() ? null : LocalDate.parse(textoDevolucion);
             int diasRetraso = Integer.parseInt(campos.get(6).trim());
             double penalizacion = Double.parseDouble(campos.get(7).trim());
-            return new Prestamo(id, herramienta, campos.get(2), inicio, limite, devolucion, diasRetraso, penalizacion);
+            // Técnica 8 - Introduce Parameter Object: las dos fechas se pasan como un PeriodoPrestamo.
+            PeriodoPrestamo periodo = new PeriodoPrestamo(inicio, limite);
+            return new Prestamo(id, herramienta, campos.get(2), periodo, devolucion, diasRetraso, penalizacion);
         } catch (IllegalArgumentException | DateTimeException e) {
             throw error(ARCHIVO_PRESTAMOS, numeroLinea, e.getMessage());
         }

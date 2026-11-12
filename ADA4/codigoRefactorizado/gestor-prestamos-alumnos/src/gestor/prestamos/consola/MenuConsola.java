@@ -2,6 +2,7 @@ package gestor.prestamos.consola;
 
 import gestor.prestamos.modelo.EstadoPrestamo;
 import gestor.prestamos.modelo.Herramienta;
+import gestor.prestamos.modelo.PeriodoPrestamo;
 import gestor.prestamos.modelo.Prestamo;
 import gestor.prestamos.persistencia.RepositorioCsv;
 import gestor.prestamos.servicio.GestorPrestamos;
@@ -182,7 +183,9 @@ public final class MenuConsola {
         LocalDate limite = entrada.pedirFecha(
                 "Fecha límite (AAAA-MM-DD, Enter = " + limitePorDefecto + "): ", limitePorDefecto);
 
-        Prestamo nuevo = gestor.prestar(id, prestatario, inicio, limite);
+        // Técnica 8 - Introduce Parameter Object: las dos fechas viajan juntas en un PeriodoPrestamo.
+        PeriodoPrestamo periodo = new PeriodoPrestamo(inicio, limite);
+        Prestamo nuevo = gestor.prestar(id, prestatario, periodo);
         guardar();
         System.out.printf("  '%s' prestada a %s hasta %s.%n",
                 nuevo.getHerramienta().getNombre(), nuevo.getPrestatario(), nuevo.getFechaLimite());
