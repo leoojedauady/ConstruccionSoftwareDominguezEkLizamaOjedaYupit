@@ -177,7 +177,7 @@ public final class GestorPrestamos {
                 .filter(p -> p.getId() == prestamoId)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No existe el préstamo con ID " + prestamoId));
-        prestamo.registrarDevolucion(fecha, PENALIZACION_POR_DIA);
+        prestamo.registrarDevolucion(fecha);
         long retraso = Math.max(0, java.time.temporal.ChronoUnit.DAYS.between(prestamo.getFechaLimite(), fecha));
         prestamo.setDiasRetraso((int) retraso);
         prestamo.setPenalizacion(Math.round(retraso * PENALIZACION_POR_DIA * 100.0) / 100.0);
