@@ -131,8 +131,14 @@ public final class RepositorioCsv {
         }
         try {
             int id = Integer.parseInt(campos.get(0).trim());
-            return new Herramienta(id, campos.get(1),
-                    campos.size() > CAMPOS_HERRAMIENTA && Boolean.parseBoolean(campos.get(2).trim()));
+            // Técnica 3 - Introduce Explaining Variable: la condición que decidía si la
+            // herramienta está dada de baja se escribía en una sola línea dentro de la
+            // llamada al constructor. Se divide en dos variables con nombre: si la línea
+            // trae la columna opcional "dada_de_baja" y el valor final de la baja.
+            // El resultado es idéntico (si falta la columna, la herramienta está activa).
+            boolean tieneColumnaDeBaja = campos.size() > CAMPOS_HERRAMIENTA;
+            boolean dadaDeBaja = tieneColumnaDeBaja && Boolean.parseBoolean(campos.get(2).trim());
+            return new Herramienta(id, campos.get(1), dadaDeBaja);
         } catch (IllegalArgumentException e) {
             throw error(ARCHIVO_HERRAMIENTAS, numeroLinea, e.getMessage());
         }
