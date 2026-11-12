@@ -1,7 +1,5 @@
-# Archivos de sistema de macOS
 .DS_Store
 
-# Clases compiladas de Java
 *.class
 out/
 bin/
