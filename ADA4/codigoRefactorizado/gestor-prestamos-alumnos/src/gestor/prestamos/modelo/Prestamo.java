@@ -9,6 +9,15 @@ import java.time.temporal.ChronoUnit;
  */
 public final class Prestamo {
 
+    /**
+     * Penalización en euros por cada día de retraso.
+     *
+     * <p><b>Técnica 4 - Move Method (campo movido junto con el método).</b> Antes esta
+     * constante estaba en {@code GestorPrestamos}. Como el cálculo de la penalización
+     * ahora vive en esta clase, el dato que usa ese cálculo se mueve con él.</p>
+     */
+    public static final double PENALIZACION_POR_DIA = 2.0;
+
     private final int id;
     private final Herramienta herramienta;
     private final String prestatario;
@@ -100,7 +109,7 @@ public final class Prestamo {
         if (!estaActivo()) {
             return diasRetraso;
         }
-        return Math.max(0, ChronoUnit.DAYS.between(fechaLimite, hoy));
+        return diasDeRetrasoHasta(hoy);
     }
 
     /**
@@ -115,10 +124,18 @@ public final class Prestamo {
     }
 
     /**
-     * Registra la devolución de la herramienta.
+     * Registra la devolución de la herramienta, calculando el retraso y la penalización.
      *
      * <p><b>Técnica 6 - Remove Parameter.</b> El método original recibía
-     * {@code double penalizacionPorDia}, pero nunca lo usaba. Se elimina el parámetro.</p>
+     * {@code double penalizacionPorDia}, pero nunca lo usaba. Se elimina el parámetro;
+     * el importe por día ahora es la constante {@link #PENALIZACION_POR_DIA} de esta clase.</p>
+     *
+     * <p><b>Técnica 4 - Move Method.</b> El cálculo del retraso y de la penalización
+     * estaba en {@code GestorPrestamos.devolver()}, que leía los datos del préstamo y luego
+     * los escribía con {@code setDiasRetraso} y {@code setPenalizacion}. Ese cálculo solo usa
+     * datos del préstamo, así que se mueve aquí ({@link #calcularRetrasoYPenalizacion}).
+     * Los dos setters dejan de ser necesarios y se eliminan, de modo que nadie de fuera
+     * puede poner un retraso o una penalización incoherentes.</p>
      *
      * @param fecha fecha real de devolución; no puede ser anterior al préstamo
      * @throws IllegalStateException si el préstamo ya estaba devuelto
@@ -135,24 +152,30 @@ public final class Prestamo {
             throw new IllegalArgumentException("La devolución no puede ser anterior al préstamo");
         }
         this.fechaDevolucion = fecha;
+        calcularRetrasoYPenalizacion(fecha);
     }
 
     /**
-     * Establece los días de retraso registrados en la devolución.
+     * Técnica 4 - Move Method: método movido desde {@code GestorPrestamos.devolver()}.
+     * Calcula los días de retraso respecto a la fecha límite y la penalización
+     * redondeada a dos decimales, exactamente igual que el código original.
      *
-     * @param diasRetraso días de retraso, no negativos
+     * @param fechaDevolucion fecha real de devolución
      */
-    public void setDiasRetraso(int diasRetraso) {
-        this.diasRetraso = diasRetraso;
+    private void calcularRetrasoYPenalizacion(LocalDate fechaDevolucion) {
+        long retraso = diasDeRetrasoHasta(fechaDevolucion);
+        this.diasRetraso = (int) retraso;
+        this.penalizacion = Math.round(retraso * PENALIZACION_POR_DIA * 100.0) / 100.0;
     }
 
     /**
-     * Establece la penalización registrada en la devolución.
+     * Días transcurridos desde la fecha límite hasta la fecha indicada; 0 si no hay retraso.
      *
-     * @param penalizacion penalización en euros, no negativa
+     * @param fecha fecha de referencia
+     * @return días de retraso, nunca negativo
      */
-    public void setPenalizacion(double penalizacion) {
-        this.penalizacion = penalizacion;
+    private long diasDeRetrasoHasta(LocalDate fecha) {
+        return Math.max(0, ChronoUnit.DAYS.between(fechaLimite, fecha));
     }
 
     /**

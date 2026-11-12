@@ -228,7 +228,7 @@ public final class MenuConsola {
             String situacion;
             if (p.estado(hoy) == EstadoPrestamo.ATRASADO) {
                 long dias = p.getDiasRetrasoA(hoy);
-                double estimada = p.calcularPenalizacion(hoy, GestorPrestamos.PENALIZACION_POR_DIA);
+                double estimada = p.calcularPenalizacion(hoy, Prestamo.PENALIZACION_POR_DIA);
                 situacion = String.format("ATRASADO %d día(s), penalización estimada %.2f €", dias, estimada);
             } else {
                 situacion = "Al día, vence " + p.getFechaLimite();
